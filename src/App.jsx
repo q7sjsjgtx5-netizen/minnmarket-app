@@ -2,14 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 
 // ===== BRAND: белый фон, фиолетовый акцент, чёрный текст =====
 const BRAND = {
-  name: "Minn Market",
-  purple: "#919093ff",
-  purpleDark: "#4C1D95",
-  black: "#0B0B0B",
-  text: "#111113",
-  muted: "#6B7280",
-  card: "#FFFFFF", // белые карточки
-  glass: "rgba(255,255,255,0.7)",
+  primary: "#7C3AED", // фиолетовый акцент
+  accent:  "#A855F7", // конец градиента
+  dark:   "#0B0B10",  // глубокий тёмный фон
+  light:  "#0B0B10",  // используем тёмный как базу
 };
 
 const REVIEWS_URL = "https://t.me/+CtMqV9EHcXRmNzk6";
@@ -343,19 +339,26 @@ export default function App() {
     document.body.style.color = BRAND.text;
   }, []);
 
-  return (
-    <div className="min-h-screen pb-24" style={{ background: "#FFFFFF" }}>
-      <div className="mx-auto w-full max-w-[390px] px-3">
-        <Header />
-        <div className="space-y-4">
-          {tab === "calc" && <CalcTab />}
-          {tab === "order" && <OrderTab />}
-          {tab === "reviews" && <ReviewsTab />}
-          {tab === "managers" && <ManagersTab />}
-          {tab === "faq" && <FaqTab />}
-        </div>
+return (
+  <div
+    className="min-h-screen pb-24 text-white"
+    style={{
+      background: `radial-gradient(120% 120% at 50% -10%, rgba(124,58,237,0.25), transparent 60%),
+                   radial-gradient(120% 120% at 100% 0%, rgba(168,85,247,0.2), transparent 50%),
+                   #0B0B10`,
+    }}
+  >
+    <div className="mx-auto w-full max-w-[390px] px-3">
+      <Header />
+      <div className="space-y-4">
+        {tab === "calc" && <CalcTab />}
+        {tab === "order" && <OrderTab />}
+        {tab === "reviews" && <ReviewsTab />}
+        {tab === "managers" && <ManagersTab />}
+        {tab === "faq" && <FaqTab />}
       </div>
-      <BottomNav current={tab} onChange={setTab} />
     </div>
-  );
+    <BottomNav current={tab} onChange={setTab} />
+  </div>
+);
 }
