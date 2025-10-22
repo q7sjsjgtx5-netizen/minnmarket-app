@@ -18,23 +18,54 @@ const tg = () => (typeof window !== "undefined" ? window.Telegram?.WebApp : null
 /** ====== GLOBAL FIX: компактный телефонный вьюпорт и фон ====== */
 const GlobalFix = () => {
   useEffect(() => {
-    // делаем тёмный фон на всём документе
+    // --- 1. Общие стили документа ---
     document.documentElement.style.background = BRAND.bgDark;
     document.body.style.background = BRAND.bgDark;
     document.body.style.color = "#fff";
     document.body.style.margin = "0";
     document.body.style.padding = "0";
-    document.body.style.webkitTextSizeAdjust = "100%"; // убираем авто-зуум iOS
-    // Telegram WebApp api
+    document.body.style.webkitTextSizeAdjust = "100%"; // фикс зума iOS
+    document.body.style.minHeight = "100dvh"; // чтобы тянулся на всю высоту
+
+    // --- 2. Telegram WebApp API ---
     const w = tg();
     if (w) {
-      w.expand?.();
-      w.setBackgroundColor?.(BRAND.bgDark);
-      w.setHeaderColor?.("secondary_bg_color");
+      w.expand?.(); // разворачиваем WebApp
+      w.setBackgroundColor?.(BRAND.bgDark); // основной фон под Telegram
+      w.setHeaderColor?.(BRAND.bgDark); // шапка Telegram — тёмная
       w.MainButton?.hide();
       w.BackButton?.hide();
     }
+
+    // --- 3. Safe area (для iPhone без белых полос) ---
+    const root = document.getElementById("root");
+    if (root) {
+      root.style.paddingTop = "calc(env(safe-area-inset-top) + 6px)";
+      root.style.paddingBottom = "calc(env(safe-area-inset-bottom) + 80px)";
+    }
+
+    // --- 4. Отключаем iOS автостили для input ---
+    const style = document.createElement("style");
+    style.innerHTML = `
+      input, textarea, select {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        outline: none !important;
+        box-shadow: none !important;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      a, button { color: inherit !important; text-decoration: none; }
+      html, body { overscroll-behavior: none; }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      if (style && style.parentNode) style.parentNode.removeChild(style);
+    };
   }, []);
+
   return null;
 };
 
