@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 
 /** ====== BRAND / CONST ====== */
 const BRAND = {
-  primary: "#6b578dff",
-  accent:  "#b0b0b0ff",
+  primary: "#7C3AED",
+  accent:  "#A855F7",
   bgDark:  "#0B0B10",
 };
 const REVIEWS_URL = "https://t.me/minnmarket_reviews";
