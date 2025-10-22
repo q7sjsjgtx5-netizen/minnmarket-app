@@ -1,23 +1,45 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-/** ───────────────────────── BRAND / CONST ───────────────────────── */
+/** ====== BRAND / CONST ====== */
 const BRAND = {
-  primary: "#7C3AED",            // фиолетовый акцент
-  accent:  "#A855F7",            // конец градиента
-  bgDark:  "#0B0B10",            // глубокий тёмный фон
+  primary: "#7C3AED",
+  accent:  "#A855F7",
+  bgDark:  "#0B0B10",
 };
 const REVIEWS_URL = "https://t.me/minnmarket_reviews";
-const YUAN_RATE = Number(import.meta.env.VITE_YUAN_RATE ?? "14.6");
+const YUAN_RATE   = Number(import.meta.env.VITE_YUAN_RATE ?? "14.6");
 
-/** ───────────────────────── HELPERS ───────────────────────── */
+/** ====== HELPERS ====== */
 const rub = (v) =>
   new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 })
     .format(Math.round(Number(v) || 0));
-
 const tg = () => (typeof window !== "undefined" ? window.Telegram?.WebApp : null);
 
-/** ───────────────────────── UI: GLASS CARD / INPUTS / BUTTONS ───────────────────────── */
-const Card = ({ title, subtitle, right, children, className = "" }) => (
+/** ====== GLOBAL FIX: компактный телефонный вьюпорт и фон ====== */
+const GlobalFix = () => {
+  useEffect(() => {
+    // делаем тёмный фон на всём документе
+    document.documentElement.style.background = BRAND.bgDark;
+    document.body.style.background = BRAND.bgDark;
+    document.body.style.color = "#fff";
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.webkitTextSizeAdjust = "100%"; // убираем авто-зуум iOS
+    // Telegram WebApp api
+    const w = tg();
+    if (w) {
+      w.expand?.();
+      w.setBackgroundColor?.(BRAND.bgDark);
+      w.setHeaderColor?.("secondary_bg_color");
+      w.MainButton?.hide();
+      w.BackButton?.hide();
+    }
+  }, []);
+  return null;
+};
+
+/** ====== UI: стеклянная карточка ====== */
+const Card = ({ title, subtitle, children, className = "" }) => (
   <div
     className={[
       "rounded-3xl bg-white/10 border border-white/10 backdrop-blur-2xl",
@@ -25,77 +47,82 @@ const Card = ({ title, subtitle, right, children, className = "" }) => (
       className,
     ].join(" ")}
   >
-    {(title || subtitle || right) && (
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          {title && <h3 className="text-base font-semibold tracking-tight">{title}</h3>}
-          {subtitle && <p className="text-xs text-white/60">{subtitle}</p>}
-        </div>
-        {right}
+    {(title || subtitle) && (
+      <div className="mb-3">
+        {title && <h3 className="text-base font-semibold tracking-tight">{title}</h3>}
+        {subtitle && <p className="text-xs text-white/70">{subtitle}</p>}
       </div>
     )}
     {children}
   </div>
 );
 
-const Input = ({ label, postfix, className = "", ...props }) => (
-  <label className="block text-white">
-    {label && <div className="mb-1 text-xs font-medium text-white/70">{label}</div>}
-    <div className="relative">
-      <input
-        {...props}
-        className={[
-          "w-full rounded-2xl border border-white/15 bg-white/10",
-          "px-4 py-3 text-[15px] text-white placeholder-white/50",
-          "outline-none transition focus:border-white/30 disabled:opacity-60 backdrop-blur-xl",
-          className,
-        ].join(" ")}
-      />
-      {postfix && <div className="absolute inset-y-0 right-3 flex items-center text-white/60">{postfix}</div>}
-    </div>
-  </label>
-);
-
-const TextArea = ({ label, className = "", ...props }) => (
-  <label className="block text-white">
-    {label && <div className="mb-1 text-xs font-medium text-white/70">{label}</div>}
-    <textarea
-      {...props}
-      className={[
-        "w-full rounded-2xl border border-white/15 bg-white/10",
-        "px-4 py-3 text-[15px] text-white placeholder-white/50",
-        "outline-none transition focus:border-white/30 disabled:opacity-60 backdrop-blur-xl",
-        className,
-      ].join(" ")}
-    />
-  </label>
-);
-
-const Button = ({ children, variant = "primary", className = "", ...props }) => (
-  <button
-    {...props}
-    className={[
-      "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-[15px] font-medium",
-      "transition will-change-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.98]",
-      variant === "outline" ? "border border-white/20 bg-white/5 text-white hover:bg-white/10" : "",
-      variant === "ghost"   ? "text-white/80 hover:bg-white/10" : "",
-      className,
-    ].join(" ")}
+/** ====== ПОЛЕ-ПИЛЮЛЯ (как на твоём эскизе) ======
+ * Белая «капсула», внутри слева жирная подпись, затем инпут.
+ */
+const PillField = ({
+  label = "Поле",
+  value,
+  onChange,
+  placeholder = "",
+  inputMode,
+}) => (
+  <div
+    className="rounded-[18px] border shadow-sm"
+    style={{
+      background: "#FFFFFF",
+      borderColor: "#E5E7EB",
+    }}
   >
-    {variant === "primary" ? (
-      <span className="relative inline-block">
-        <span className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] blur-md opacity-70" />
-        <span className="relative rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-4 py-2">
-          {children}
-        </span>
-      </span>
-    ) : (
-      children
-    )}
-  </button>
+    <div className="px-4 pt-2 pb-2.5">
+      <div className="text-[15px] font-semibold text-[#111113] leading-5 mb-1">
+        {label}:
+      </div>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        inputMode={inputMode}
+        placeholder={placeholder}
+        className="w-full bg-transparent outline-none text-[16px] leading-[22px] text-[#111113] placeholder-[#9CA3AF]"
+        style={{ WebkitAppearance: "none" }}
+      />
+    </div>
+  </div>
 );
 
-/** ───────────────────────── HEADER ───────────────────────── */
+/** ====== Кнопки ====== */
+const Button = ({ children, onClick, disabled, variant = "primary", className = "" }) => {
+  const base = "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-[15px] font-medium transition active:scale-[0.98]";
+  if (variant === "primary") {
+    return (
+      <button onClick={onClick} disabled={disabled}
+        className={`${base} ${className} text-white`}
+        style={{ cursor: disabled ? "not-allowed" : "pointer" }}
+      >
+        <span className="relative inline-block w-full">
+          <span className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] blur-md opacity-70" />
+          <span className={`relative block rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] px-4 py-2 ${disabled ? "opacity-60" : ""}`}>
+            {children}
+          </span>
+        </span>
+      </button>
+    );
+  }
+  if (variant === "outline") {
+    return (
+      <button onClick={onClick} className={`${base} ${className} text-white border border-white/20 bg-white/5 hover:bg-white/10`}>
+        {children}
+      </button>
+    );
+  }
+  return (
+    <button onClick={onClick} className={`${base} ${className} text-white/80 hover:bg-white/10`}>
+      {children}
+    </button>
+  );
+};
+
+/** ====== HEADER (без логотипа, чистый) ====== */
 function Header() {
   return (
     <div className="mb-3 flex items-center justify-between text-white">
@@ -103,7 +130,7 @@ function Header() {
         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#A855F7] opacity-90" />
         <div>
           <div className="text-[15px] font-semibold leading-tight">Minn Market</div>
-          <div className="text-xs text-white/60">Poizon • Оригинал • 10–18 дней</div>
+          <div className="text-xs text-white/70">Poizon • оригинал • доставка 10–18 дней</div>
         </div>
       </div>
       <Button variant="outline" onClick={() => tg()?.close?.()}>Закрыть</Button>
@@ -111,7 +138,7 @@ function Header() {
   );
 }
 
-/** ───────────────────────── CATEGORY TILES (👕 / 👟) ───────────────────────── */
+/** ====== ТILES Категории (👕/👟), с мягкой подсветкой active ====== */
 const CategoryTiles = ({ value, onChange }) => {
   const Tile = ({ k, icon, label }) => {
     const active = value === k;
@@ -120,13 +147,11 @@ const CategoryTiles = ({ value, onChange }) => {
         onClick={() => onChange(k)}
         className="relative w-full rounded-2xl p-4 text-left transition active:scale-[0.98]"
       >
-        {active && (
-          <span className="pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#7C3AED]/35 to-[#A855F7]/35 blur-xl" />
-        )}
+        {active && <span className="pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#7C3AED]/35 to-[#A855F7]/35 blur-xl" />}
         <div className="relative flex items-center gap-3">
           <div className="text-2xl">{icon}</div>
           <div>
-            <div className="text-[15px] font-semibold">{label}</div>
+            <div className="text-[15px] font-semibold">{" "}{label}</div>
             <div className="text-xs text-white/70">Категория</div>
           </div>
         </div>
@@ -136,23 +161,23 @@ const CategoryTiles = ({ value, onChange }) => {
   return (
     <div className="grid grid-cols-2 gap-3">
       <Card className="p-0"><Tile k="apparel" icon="👕" label="Одежда" /></Card>
-      <Card className="p-0"><Tile k="shoes" icon="👟" label="Обувь" /></Card>
+      <Card className="p-0"><Tile k="shoes"   icon="👟" label="Обувь" /></Card>
     </div>
   );
 };
 
-/** ───────────────────────── TABS: CALC / ORDER / REVIEWS / FAQ / MANAGERS ───────────────────────── */
+/** ====== TAB: Расчёт ====== */
 function CalcTab() {
   const [category, setCategory] = useState("apparel");
-  const [yuan, setYuan]       = useState("");
-  const [link, setLink]       = useState("");
-  const [title, setTitle]     = useState("");
-  const [size, setSize]       = useState("");
+  const [yuan, setYuan]     = useState("");
+  const [link, setLink]     = useState("");
+  const [title, setTitle]   = useState("");
+  const [size, setSize]     = useState("");
 
-  // Бизнес-логика (примерные значения — поправим под тебя)
-  const servicePct = 0.07;  // комиссия 7%
-  const fixed      = 350;   // фикс руб
-  const delivery   = 990;   // доставка руб
+  // простая формула (подправим под бизнес-правила)
+  const servicePct = 0.07;
+  const fixed      = 350;
+  const delivery   = 990;
 
   const total = useMemo(() => {
     const base = (Number(yuan) || 0) * YUAN_RATE;
@@ -163,24 +188,19 @@ function CalcTab() {
   const sendToManager = () => {
     const payload = {
       type: "calc",
-      category,
-      title,
-      size,
-      link,
-      yuan: Number(yuan),
-      rate: YUAN_RATE,
+      category, title, size, link,
+      yuan: Number(yuan), rate: YUAN_RATE,
       breakdown: {
         base_rub: Math.round((Number(yuan) || 0) * YUAN_RATE),
         service_pct: Math.round(servicePct * 100),
-        fix_fee: fixed,
-        shipping: delivery,
+        fix_fee: fixed, shipping: delivery,
         total_rub: Math.round(total),
       },
     };
-    const webapp = tg();
-    if (webapp?.sendData) {
-      webapp.sendData(JSON.stringify(payload));
-      webapp.showToast?.("Заявка отправлена менеджеру");
+    const w = tg();
+    if (w?.sendData) {
+      w.sendData(JSON.stringify(payload));
+      w.showToast?.("Заявка отправлена менеджеру");
     } else {
       window.open(`https://t.me/maxxim_sv?text=${encodeURIComponent(JSON.stringify(payload))}`, "_blank");
     }
@@ -188,19 +208,18 @@ function CalcTab() {
 
   return (
     <div className="space-y-4">
-      <Card title="Расчёт">
-        <div className="mb-2 text-xs text-white/70">Актуальный курс юаня: {YUAN_RATE.toFixed(2)} ₽/¥</div>
+      <Card title="Расчёт Poizon" subtitle={`Курс: ${YUAN_RATE.toFixed(2)} ₽/¥`}>
         <CategoryTiles value={category} onChange={setCategory} />
 
-        <div className="mt-4 grid grid-cols-1 gap-3.5">
-          <Input placeholder="Цена на Poizon, ¥" inputMode="decimal" value={yuan} onChange={(e)=>setYuan(e.target.value)} postfix={<span className="text-xs">¥</span>} />
-          <Input placeholder="Ссылка на товар" value={link} onChange={(e)=>setLink(e.target.value)} />
-          <Input placeholder="Название товара" value={title} onChange={(e)=>setTitle(e.target.value)} />
-          <Input placeholder="Размер (EU 43 / US 10 / M)" value={size} onChange={(e)=>setSize(e.target.value)} />
+        <div className="mt-4 flex flex-col gap-3.5">
+          <PillField label="Цена на Poizon" value={yuan} onChange={setYuan} inputMode="decimal" placeholder="например, 899" />
+          <PillField label="Ссылка на товар" value={link} onChange={setLink} placeholder="https://..." />
+          <PillField label="Название товара" value={title} onChange={setTitle} placeholder="Nike Manoa Leather" />
+          <PillField label="Размер" value={size} onChange={setSize} placeholder="EU 43 / US 10 / M" />
         </div>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-          <div className="text-xs text-white/70">Итоговая сумма (с комиссиями и доставкой):</div>
+          <div className="text-xs text-white/70">Итоговая сумма (включая комиссию и доставку):</div>
           <div className="mt-1 text-2xl font-bold">{rub(total)}</div>
         </div>
 
@@ -212,18 +231,17 @@ function CalcTab() {
   );
 }
 
+/** ====== TAB: Заявка ====== */
 function OrderTab() {
-  const [form, setForm] = useState({
-    name: "", phone: "", username: "", city: "", comment: "", prepay: true,
-  });
-  const on = (k) => (e) => setForm({ ...form, [k]: e.target?.value ?? e });
+  const [form, setForm] = useState({ name: "", phone: "", username: "", city: "", comment: "", prepay: true });
+  const on = (k) => (v) => setForm({ ...form, [k]: v });
 
   const submit = () => {
     const payload = { type: "order", ...form };
-    const webapp = tg();
-    if (webapp?.sendData) {
-      webapp.sendData(JSON.stringify(payload));
-      webapp.showToast?.("Заявка отправлена");
+    const w = tg();
+    if (w?.sendData) {
+      w.sendData(JSON.stringify(payload));
+      w.showToast?.("Заявка отправлена");
     } else {
       window.open(`https://t.me/maxxim_sv?text=${encodeURIComponent(JSON.stringify(payload))}`, "_blank");
     }
@@ -232,16 +250,30 @@ function OrderTab() {
   return (
     <div className="space-y-4">
       <Card title="Заявка на заказ" subtitle="Укажите данные — проверим наличие и подтвердим цену">
-        <div className="flex flex-col gap-3">
-          <Input placeholder="Имя и фамилия" value={form.name} onChange={on("name")} />
-          <Input placeholder="Телефон (+7…)" inputMode="tel" value={form.phone} onChange={on("phone")} />
-          <Input placeholder="Telegram @username" value={form.username} onChange={on("username")} />
-          <Input placeholder="Город" value={form.city} onChange={on("city")} />
-          <TextArea placeholder="Комментарий (модель, размер, ссылка)" rows={4} value={form.comment} onChange={on("comment")} />
+        <div className="flex flex-col gap-3.5">
+          <PillField label="Имя и фамилия" value={form.name} onChange={on("name")} placeholder="Как к вам обращаться" />
+          <PillField label="Телефон" value={form.phone} onChange={on("phone")} inputMode="tel" placeholder="+7…" />
+          <PillField label="Telegram @username" value={form.username} onChange={on("username")} placeholder="@username" />
+          <PillField label="Город" value={form.city} onChange={on("city")} placeholder="Екатеринбург" />
+          <div className="rounded-[18px] border shadow-sm" style={{ background: "#FFFFFF", borderColor: "#E5E7EB" }}>
+            <div className="px-4 pt-2 pb-2.5">
+              <div className="text-[15px] font-semibold text-[#111113] leading-5 mb-1">Комментарий:</div>
+              <textarea
+                value={form.comment}
+                onChange={(e)=>on("comment")(e.target.value)}
+                rows={3}
+                placeholder="Модель, размер, ссылка…"
+                className="w-full bg-transparent outline-none text-[16px] leading-[22px] text-[#111113] placeholder-[#9CA3AF]"
+                style={{ WebkitAppearance: "none", resize: "none" }}
+              />
+            </div>
+          </div>
+
           <label className="mt-1 inline-flex items-center gap-2 text-sm text-white/80">
-            <input type="checkbox" checked={form.prepay} onChange={(e)=>setForm({ ...form, prepay: e.target.checked })} />
+            <input type="checkbox" checked={form.prepay} onChange={(e)=>on("prepay")(e.target.checked)} />
             Предоплата 30% (возврат при отмене)
           </label>
+
           <Button onClick={submit} disabled={!form.name || !form.phone}>Отправить заявку</Button>
         </div>
       </Card>
@@ -249,12 +281,11 @@ function OrderTab() {
   );
 }
 
+/** ====== TAB: Отзывы ====== */
 function ReviewsTab() {
   return (
     <Card title="Отзывы" subtitle="Живые отзывы клиентов Minn Market">
-      <p className="text-[15px] text-white/80">
-        Фотографии, видео и впечатления клиентов — в нашем канале. Подписывайтесь, чтобы видеть свежие заказы.
-      </p>
+      <p className="text-[15px] text-white/80">Фото, видео и впечатления клиентов — в нашем канале.</p>
       <div className="mt-4">
         <Button onClick={() => (tg()?.openTelegramLink?.(REVIEWS_URL) ?? window.open(REVIEWS_URL, "_blank"))}>
           Перейти к отзывам
@@ -264,12 +295,12 @@ function ReviewsTab() {
   );
 }
 
+/** ====== TAB: FAQ ====== */
 function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
-      <button className="w-full text-left p-4 flex justify-between items-center text-white"
-              onClick={() => setOpen((v)=>!v)}>
+      <button className="w-full text-left p-4 flex justify-between items-center text-white" onClick={()=>setOpen(v=>!v)}>
         <span className="font-medium">{q}</span>
         <span className="text-white/70">{open ? "−" : "+"}</span>
       </button>
@@ -279,17 +310,14 @@ function FaqItem({ q, a }) {
 }
 function FaqTab() {
   const items = [
-    { q: "Как считается цена с Poizon?", a: "Умножаем цену в ¥ на курс и добавляем комиссию и доставку. На вкладке «Расчёт» вы видите конечную сумму." },
-    { q: "Сроки доставки?", a: "В среднем 10–18 дней после выкупа. В периоды распродаж сроки могут увеличиваться." },
-    { q: "Оригинал?", a: "Только оригинал через Poizon с полной проверкой. При необходимости предоставляем подтверждение." },
+    { q: "Как считается цена с Poizon?", a: "Цена в ¥ × курс + комиссия + доставка. На вкладке «Расчёт» показана конечная сумма." },
+    { q: "Сроки доставки?", a: "В среднем 10–18 дней после выкупа (в распродажи дольше)." },
+    { q: "Оригинал?", a: "Только оригинал через Poizon с полной проверкой. При необходимости даём подтверждение." },
   ];
-  return (
-    <div className="space-y-3">
-      {items.map((it, i) => <FaqItem key={i} q={it.q} a={it.a} />)}
-    </div>
-  );
+  return <div className="space-y-3">{items.map((it, i) => <FaqItem key={i} q={it.q} a={it.a} />)}</div>;
 }
 
+/** ====== TAB: Менеджеры ====== */
 function ManagersTab() {
   const managers = [
     { name: "Тёма",   role: "Основатель / консультации", handle: "minnmarket" },
@@ -319,7 +347,7 @@ function ManagersTab() {
   );
 }
 
-/** ───────────────────────── BOTTOM NAV (icon-only) ───────────────────────── */
+/** ====== BOTTOM NAV — иконки, без текста ====== */
 function BottomNav({ current, onChange }) {
   const tabs = [
     { id: "calc",     icon: "🧮" },
@@ -348,26 +376,12 @@ function BottomNav({ current, onChange }) {
   );
 }
 
-/** ───────────────────────── ROOT ───────────────────────── */
+/** ====== ROOT ====== */
 export default function App() {
   const [tab, setTab] = useState("calc");
-
-  useEffect(() => {
-    document.body.style.background = BRAND.bgDark;
-    document.body.style.color = "#fff";
-    const w = tg();
-    if (w) {
-      w.expand?.();
-      w.setHeaderColor?.("secondary_bg_color");
-      w.setBackgroundColor?.(BRAND.bgDark);
-      w.MainButton?.hide();
-      w.BackButton?.hide();
-    }
-  }, []);
-
   return (
     <div
-      className="min-h-screen pb-24 text-white"
+      className="min-h-[100dvh] pb-[88px] text-white" // 88px — место под нижнюю навигацию
       style={{
         background: `
           radial-gradient(120% 120% at 50% -10%, rgba(124,58,237,0.25), transparent 60%),
@@ -376,7 +390,8 @@ export default function App() {
         `,
       }}
     >
-      <div className="mx-auto w-full max-w-[390px] px-3">
+      <GlobalFix/>
+      <div className="mx-auto w-full max-w-[390px] px-3 pt-2">
         <Header />
         <div className="space-y-4">
           {tab === "calc"     && <CalcTab />}
